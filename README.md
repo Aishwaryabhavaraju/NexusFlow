@@ -1,3 +1,9 @@
+
+# NexusFlow
+Visual IoT Telemetry & Dynamic Rule Engine
+
+---
+
 # NexusFlow – Member 3: React & React Flow Visual Graph Builder
 
 Welcome to the **NexusFlow** frontend repository for **Member 3**. This project contains the visual graph builder interface for building Industrial IoT (IIoT) data pipelines using **React**, **Vite**, and **@xyflow/react**.
