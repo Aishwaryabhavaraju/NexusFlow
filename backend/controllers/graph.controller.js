@@ -1,175 +1,185 @@
+const mongoose = require("mongoose");
 const Graph = require("../models/graph.model");
+const validateGraph = require("../utils/validateGraph");
 
-// CREATE GRAPH
-// POST /api/graphs
+const {
+  DEFAULT_GRAPH_CONFIG
+} = require("../constants/graph.constants");
 
-exports.createGraph = async (req, res, next) => {
-    try {
-        const { name, description, nodes, edges } = req.body;
+// Create a new graph
+const createGraph = async (req, res, next) => {
+  try {
+    const graphData = {
+      ...req.body,
+      config: {
+        ...DEFAULT_GRAPH_CONFIG,
+        ...(req.body.config || {})
+      }
+    };
 
-        // Validate required fields
-        if (!name || !Array.isArray(nodes) || !Array.isArray(edges)) {
-            return res.status(400).json({
-                success: false,
-                message: "Name, nodes and edges are required"
-            });
-        }
+    const validationError = validateGraph(graphData);
 
-        // Check node IDs
-        const nodeIds = new Set();
-
-        for (const node of nodes) {
-            if (!node.id || !node.type || nodeIds.has(node.id)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Every node must have a unique ID and type"
-                });
-            }
-
-            nodeIds.add(node.id);
-        }
-
-        // Check edge connections
-        for (const edge of edges) {
-            if (
-                !edge.source ||
-                !edge.target ||
-                !nodeIds.has(edge.source) ||
-                !nodeIds.has(edge.target)
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid edge connection"
-                });
-            }
-        }
-
-        // Save graph to MongoDB
-        const graph = await Graph.create({
-            name,
-            description,
-            nodes,
-            edges
-        });
-
-        res.status(201).json({
-            success: true,
-            message: "Graph saved successfully",
-            data: graph
-        });
-
-    } catch (error) {
-        next(error);
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError
+      });
     }
+
+    const graph = await Graph.create(graphData);
+
+    res.status(201).json({
+      success: true,
+      message: "Graph created successfully",
+      data: graph
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
+// Get all graphs
+const getAllGraphs = async (req, res, next) => {
+  try {
+    const graphs = await Graph.find().sort({ updatedAt: -1 });
 
-// GET ALL GRAPHS
-// GET /api/graphs
-
-exports.getAllGraphs = async (req, res, next) => {
-    try {
-        const graphs = await Graph.find()
-            .sort({ updatedAt: -1 });
-
-        res.status(200).json({
-            success: true,
-            count: graphs.length,
-            data: graphs
-        });
-
-    } catch (error) {
-        next(error);
-    }
+    res.status(200).json({
+      success: true,
+      count: graphs.length,
+      data: graphs
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
+// Get a graph by ID
+const getGraphById = async (req, res, next) => {
+  try {
+    const { graphId } = req.params;
 
-// GET GRAPH BY ID
-// GET /api/graphs/:graphId
-
-exports.getGraphById = async (req, res, next) => {
-    try {
-        const graph = await Graph.findById(req.params.graphId);
-
-        if (!graph) {
-            return res.status(404).json({
-                success: false,
-                message: "Graph not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: graph
-        });
-
-    } catch (error) {
-        next(error);
+    if (!mongoose.isValidObjectId(graphId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid graph ID"
+      });
     }
+
+    const graph = await Graph.findById(graphId);
+
+    if (!graph) {
+      return res.status(404).json({
+        success: false,
+        message: "Graph not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: graph
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
+// Update a graph
+const updateGraph = async (req, res, next) => {
+  try {
+    const { graphId } = req.params;
 
-// UPDATE GRAPH
-// PUT /api/graphs/:graphId
-
-exports.updateGraph = async (req, res, next) => {
-    try {
-        const { name, description, nodes, edges, status } = req.body;
-
-        const graph = await Graph.findByIdAndUpdate(
-            req.params.graphId,
-            {
-                ...(name !== undefined && { name }),
-                ...(description !== undefined && { description }),
-                ...(nodes !== undefined && { nodes }),
-                ...(edges !== undefined && { edges }),
-                ...(status !== undefined && { status })
-            },
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
-        if (!graph) {
-            return res.status(404).json({
-                success: false,
-                message: "Graph not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Graph updated successfully",
-            data: graph
-        });
-
-    } catch (error) {
-        next(error);
+    if (!mongoose.isValidObjectId(graphId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid graph ID"
+      });
     }
+
+    const graph = await Graph.findById(graphId);
+
+    if (!graph) {
+      return res.status(404).json({
+        success: false,
+        message: "Graph not found"
+      });
+    }
+
+    const updatedData = {
+      name: req.body.name ?? graph.name,
+      description: req.body.description ?? graph.description,
+      config: {
+        ...graph.config.toObject(),
+        ...(req.body.config || {})
+      },
+      nodes: req.body.nodes ?? graph.nodes,
+      edges: req.body.edges ?? graph.edges
+    };
+
+    const validationError = validateGraph(updatedData);
+
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError
+      });
+    }
+
+    graph.name = updatedData.name;
+    graph.description = updatedData.description;
+    graph.config = updatedData.config;
+    graph.nodes = updatedData.nodes;
+    graph.edges = updatedData.edges;
+
+    if (req.body.status !== undefined) {
+      graph.status = req.body.status;
+    }
+
+    await graph.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Graph updated successfully",
+      data: graph
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
+// Delete a graph
+const deleteGraph = async (req, res, next) => {
+  try {
+    const { graphId } = req.params;
 
-// DELETE GRAPH
-// DELETE /api/graphs/:graphId
-
-exports.deleteGraph = async (req, res, next) => {
-    try {
-        const graph = await Graph.findByIdAndDelete(req.params.graphId);
-
-        if (!graph) {
-            return res.status(404).json({
-                success: false,
-                message: "Graph not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Graph deleted successfully"
-        });
-
-    } catch (error) {
-        next(error);
+    if (!mongoose.isValidObjectId(graphId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid graph ID"
+      });
     }
+
+    const graph = await Graph.findByIdAndDelete(graphId);
+
+    if (!graph) {
+      return res.status(404).json({
+        success: false,
+        message: "Graph not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Graph deleted successfully"
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createGraph,
+  getAllGraphs,
+  getGraphById,
+  updateGraph,
+  deleteGraph
 };
