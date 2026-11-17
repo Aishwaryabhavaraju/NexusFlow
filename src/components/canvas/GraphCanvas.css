@@ -1,0 +1,48 @@
+.nf-canvas-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: var(--bg-canvas);
+}
+
+.nf-canvas-controls {
+  box-shadow: var(--shadow-md) !important;
+  border: 1px solid var(--border-medium) !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden;
+  background-color: var(--bg-secondary) !important;
+}
+
+.nf-canvas-controls button {
+  background-color: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+  fill: var(--text-secondary) !important;
+}
+
+.nf-canvas-controls button:hover {
+  background-color: var(--bg-surface-hover) !important;
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+}
+
+.nf-canvas-minimap {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden;
+}
+
+.nf-canvas-toolbar-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
+  margin-top: 10px;
+  margin-right: 10px;
+}
