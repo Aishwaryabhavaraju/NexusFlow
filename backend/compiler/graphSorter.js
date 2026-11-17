@@ -1,5 +1,10 @@
 const sortGraphNodes = (parsedGraph) => {
-  const { nodes, outgoingEdges, incomingEdges } = parsedGraph;
+  const {
+    nodes,
+    incomingEdges,
+    outgoingEdges,
+    nodeMap
+  } = parsedGraph;
 
   const inDegree = new Map();
 
@@ -10,7 +15,6 @@ const sortGraphNodes = (parsedGraph) => {
     );
   });
 
-  // Start with nodes having no incoming edges
   const queue = nodes
     .filter((node) => inDegree.get(node.id) === 0)
     .map((node) => node.id);
@@ -20,13 +24,9 @@ const sortGraphNodes = (parsedGraph) => {
   while (queue.length > 0) {
     const currentId = queue.shift();
 
-    sortedNodes.push(
-      parsedGraph.nodeMap.get(currentId)
-    );
+    sortedNodes.push(nodeMap.get(currentId));
 
-    const edges = outgoingEdges.get(currentId);
-
-    edges.forEach((edge) => {
+    for (const edge of outgoingEdges.get(currentId)) {
       const targetId = edge.target;
 
       inDegree.set(
@@ -37,14 +37,11 @@ const sortGraphNodes = (parsedGraph) => {
       if (inDegree.get(targetId) === 0) {
         queue.push(targetId);
       }
-    });
+    }
   }
 
-  // If not all nodes are sorted, the graph contains a cycle
   if (sortedNodes.length !== nodes.length) {
-    throw new Error(
-      "Invalid graph: circular connection detected"
-    );
+    throw new Error("Cannot sort graph: cycle detected");
   }
 
   return sortedNodes;

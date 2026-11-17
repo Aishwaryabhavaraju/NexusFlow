@@ -7,11 +7,15 @@ const {
     getAllGraphs,
     getGraphById,
     updateGraph,
-    deleteGraph
+    deleteGraph,
+    validateGraphController
 } = require("../controllers/graph.controller");
 
 // Create a new graph
 router.post("/", createGraph);
+
+// Validate graph configuration
+router.post("/validate", validateGraphController);
 
 // Retrieve all graphs
 router.get("/", getAllGraphs);

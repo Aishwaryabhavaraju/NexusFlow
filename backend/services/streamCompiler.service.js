@@ -8,75 +8,58 @@ const {
 } = require("./telemetryStream.service");
 
 class StreamCompiler {
-  // Convert graph JSON into an executable Observable
   compile(graph, options = {}) {
-    try {
-      console.log("Starting NexusFlow Stream Compiler...");
+    // Step 1: Parse the graph
+    const parsedGraph = parseGraph(graph);
 
-      // Step 1: Parse graph
-      const parsedGraph = parseGraph(graph);
+    // Step 2: Validate the parsed graph
+    const validation = validateGraph(parsedGraph);
 
-      // Step 2: Validate graph
-      validateGraph(parsedGraph);
-
-      // Step 3: Determine execution order
-      const sortedNodes = sortGraphNodes(parsedGraph);
-
-      console.log(
-        "Execution order:",
-        sortedNodes.map((node) => node.type)
-      );
-
-      // Step 4: Build RxJS pipeline
-      const observable = buildPipeline(
-        parsedGraph,
-        sortedNodes,
-        {
-          telemetryStream$: options.telemetryStream$ || telemetryStream$,
-          sendAlert: options.sendAlert
-        }
-      );
-
-      console.log("Stream Compiler completed successfully");
-
-      return observable;
-    } catch (error) {
-      console.error("Stream compilation failed:", error.message);
+    if (!validation.isValid) {
+      const error = new Error("Graph validation failed");
+      error.validationErrors = validation.errors;
       throw error;
     }
+
+    // Step 3: Sort the graph
+    const sortedNodes = sortGraphNodes(parsedGraph);
+
+    console.log(
+      "Execution order:",
+      sortedNodes.map((node) => node.id)
+    );
+
+    // Step 4: Build RxJS pipeline
+    return buildPipeline(
+      parsedGraph,
+      sortedNodes,
+      {
+        telemetryStream$:
+          options.telemetryStream$ || telemetryStream$,
+        sendAlert: options.sendAlert
+      }
+    );
   }
 
-  // Compile and start executing a graph
   execute(graph, options = {}) {
     const observable = this.compile(graph, options);
 
-    const subscription = observable.subscribe({
+    return observable.subscribe({
       next: (data) => {
         console.log("Pipeline output:", data);
-
-        if (options.onData) {
-          options.onData(data);
-        }
+        options.onData?.(data);
       },
 
       error: (error) => {
-        console.error("Pipeline execution error:", error.message);
-
-        if (options.onError) {
-          options.onError(error);
-        }
+        console.error("Pipeline error:", error.message);
+        options.onError?.(error);
       },
 
       complete: () => {
-        console.log("Pipeline execution completed");
-
-        if (options.onComplete) {
-          options.onComplete();
-        }
+        console.log("Pipeline completed");
+        options.onComplete?.();
       }
     });
-
-    return subscription;
   }
 }
 

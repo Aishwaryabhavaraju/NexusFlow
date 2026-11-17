@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Graph = require("../models/graph.model");
 const validateGraph = require("../utils/validateGraph");
+const parseGraph = require("../compiler/graphParser");
+const validateCompilerGraph = require("../compiler/graphValidator");
 
 const {
   DEFAULT_GRAPH_CONFIG
@@ -176,10 +178,34 @@ const deleteGraph = async (req, res, next) => {
   }
 };
 
+// Validate a graph via compiler validator
+const validateGraphController = (req, res) => {
+  try {
+    const parsedGraph = parseGraph(req.body);
+
+    const result = validateCompilerGraph(parsedGraph);
+
+    return res.status(result.isValid ? 200 : 400).json({
+      success: result.isValid,
+      message: result.isValid
+        ? "Graph validation successful"
+        : "Graph validation failed",
+      errors: result.errors
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+      errors: [error.message]
+    });
+  }
+};
+
 module.exports = {
   createGraph,
   getAllGraphs,
   getGraphById,
   updateGraph,
-  deleteGraph
+  deleteGraph,
+  validateGraphController
 };
