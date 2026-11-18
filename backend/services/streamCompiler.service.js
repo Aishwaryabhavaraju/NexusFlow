@@ -3,16 +3,13 @@ const validateGraph = require("../compiler/graphValidator");
 const sortGraphNodes = require("../compiler/graphSorter");
 const buildPipeline = require("../compiler/pipelineBuilder");
 
-const {
-  telemetryStream$
-} = require("./telemetryStream.service");
+const { telemetryStream$ } =
+  require("./telemetryStream.service");
 
 class StreamCompiler {
   compile(graph, options = {}) {
-    // Step 1: Parse the graph
     const parsedGraph = parseGraph(graph);
 
-    // Step 2: Validate the parsed graph
     const validation = validateGraph(parsedGraph);
 
     if (!validation.isValid) {
@@ -21,42 +18,36 @@ class StreamCompiler {
       throw error;
     }
 
-    // Step 3: Sort the graph
+    // Determine the execution order.
     const sortedNodes = sortGraphNodes(parsedGraph);
 
     console.log(
-      "Execution order:",
-      sortedNodes.map((node) => node.id)
+      "Execution Order:",
+      sortedNodes.map(node => node.id)
     );
 
-    // Step 4: Build RxJS pipeline
-    return buildPipeline(
-      parsedGraph,
-      sortedNodes,
-      {
-        telemetryStream$:
-          options.telemetryStream$ || telemetryStream$,
-        sendAlert: options.sendAlert
-      }
-    );
+    // Build the RxJS pipeline.
+    return buildPipeline(parsedGraph, sortedNodes, {
+      telemetryStream$:
+        options.telemetryStream$ || telemetryStream$,
+      sendAlert: options.sendAlert
+    });
   }
 
   execute(graph, options = {}) {
     const observable = this.compile(graph, options);
 
     return observable.subscribe({
-      next: (data) => {
-        console.log("Pipeline output:", data);
+      next: data => {
+        console.log("Pipeline Output:", data);
         options.onData?.(data);
       },
-
-      error: (error) => {
-        console.error("Pipeline error:", error.message);
+      error: error => {
+        console.error("Pipeline Error:", error.message);
         options.onError?.(error);
       },
-
       complete: () => {
-        console.log("Pipeline completed");
+        console.log("Pipeline Completed");
         options.onComplete?.();
       }
     });

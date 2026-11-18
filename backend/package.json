@@ -9,7 +9,8 @@
     "test:rxjs": "node scripts/test-rxjs.js",
     "test:compiler": "node scripts/test-stream-compiler.js",
     "test:parser": "node scripts/test-graph-parser.js",
-    "test:validator": "node scripts/test-graph-validator.js"
+    "test:validator": "node scripts/test-graph-validator.js",
+    "test:sorter": "node scripts/test-graph-sorter.js"
   },
   "keywords": [],
   "author": "",
