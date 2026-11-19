@@ -9,24 +9,34 @@ const {
   NODE_TYPES
 } = require("./compiler.constants");
 
-// Build the sensor source Observable
-const buildSensorSource = (node, telemetryStream$) => {
-  const { deviceId, metric } = node.data;
+// Sensor node: creates a stream for one device and metric.
+const createSensorStream = (node, context) => {
+  const { deviceId, metric } = node.data || {};
+  const telemetryStream$ = context.telemetryStream$;
+
+  if (!deviceId || !metric) {
+    throw new Error(
+      `Sensor node ${node.id} requires deviceId and metric`
+    );
+  }
+
+  if (!telemetryStream$) {
+    throw new Error("Telemetry stream is not configured");
+  }
 
   return telemetryStream$.pipe(
-    filter((reading) => {
-      return (
-        reading.deviceId === deviceId &&
-        reading.measurements &&
-        Number.isFinite(reading.measurements[metric])
-      );
-    }),
+    // Accept events from the configured device only.
+    filter((event) => event.deviceId === deviceId),
 
-    map((reading) => ({
-      deviceId: reading.deviceId,
-      metric,
-      value: reading.measurements[metric],
-      timestamp: reading.timestamp || new Date()
+    // Accept the configured sensor metric only.
+    filter((event) => event.metric === metric),
+
+    // Convert the event into the pipeline data format.
+    map((event) => ({
+      deviceId: event.deviceId,
+      metric: event.metric,
+      value: event.value,
+      timestamp: event.timestamp
     }))
   );
 };
@@ -160,10 +170,7 @@ const buildSmsAlert = (node, context = {}) => {
 const buildNode = (node, context = {}) => {
   switch (node.type) {
     case NODE_TYPES.SENSOR:
-      return buildSensorSource(
-        node,
-        context.telemetryStream$
-      );
+      return createSensorStream(node, context);
 
     case NODE_TYPES.MOVING_AVERAGE:
       return buildMovingAverage(node);
@@ -183,5 +190,6 @@ const buildNode = (node, context = {}) => {
 };
 
 module.exports = {
-  buildNode
+  buildNode,
+  createSensorStream
 };

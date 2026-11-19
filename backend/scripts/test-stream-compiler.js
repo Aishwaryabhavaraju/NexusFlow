@@ -99,11 +99,9 @@ readings.forEach((temperature, index) => {
 
     testTelemetry$.next({
       deviceId: "TURBINE-001",
-      timestamp: new Date(),
-      measurements: {
-        temperature,
-        pressure: 110
-      }
+      metric: "temperature",
+      value: temperature,
+      timestamp: new Date()
     });
 
     // Complete the test after the last reading

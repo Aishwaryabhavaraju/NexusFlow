@@ -10,7 +10,8 @@
     "test:compiler": "node scripts/test-stream-compiler.js",
     "test:parser": "node scripts/test-graph-parser.js",
     "test:validator": "node scripts/test-graph-validator.js",
-    "test:sorter": "node scripts/test-graph-sorter.js"
+    "test:sorter": "node scripts/test-graph-sorter.js",
+    "test:data-source": "node scripts/test-data-source.js"
   },
   "keywords": [],
   "author": "",
