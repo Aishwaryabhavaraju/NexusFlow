@@ -42,7 +42,7 @@ const createSensorStream = (node, context) => {
 };
 
 // Build a moving average operator
-const buildMovingAverage = (node) => {
+const createMovingAverage = (node) => {
   const windowSize = node.data.windowSize;
 
   return (source$) =>
@@ -73,69 +73,112 @@ const buildMovingAverage = (node) => {
     );
 };
 
-// Build mathematical operation
-const buildMathOperation = (node) => {
-  const { operation, operand } = node.data;
+// Math Operation node: addition, subtraction, multiplication, division
+const createMathOperation = (node) => {
+  const { operation, operand } = node.data || {};
+
+  const supportedOperations = [
+    "add",
+    "subtract",
+    "multiply",
+    "divide"
+  ];
+
+  if (!supportedOperations.includes(operation)) {
+    throw new Error(
+      `Unsupported math operation: ${operation}`
+    );
+  }
+
+  if (typeof operand !== "number" ||
+      !Number.isFinite(operand)) {
+    throw new Error(
+      `Math node ${node.id} requires a valid numeric operand`
+    );
+  }
+
+  if (operation === "divide" && operand === 0) {
+    throw new Error("Division by zero is not allowed");
+  }
 
   return (source$) =>
     source$.pipe(
-      map((reading) => {
+      map((event) => {
         let result;
 
         switch (operation) {
           case "add":
-            result = reading.value + operand;
+            result = event.value + operand;
             break;
 
           case "subtract":
-            result = reading.value - operand;
+            result = event.value - operand;
             break;
 
           case "multiply":
-            result = reading.value * operand;
+            result = event.value * operand;
             break;
 
           case "divide":
-            if (operand === 0) {
-              throw new Error("Division by zero");
-            }
-            result = reading.value / operand;
+            result = event.value / operand;
             break;
+        }
 
-          default:
-            throw new Error("Unsupported math operation");
+        if (!Number.isFinite(result)) {
+          throw new Error("Math operation produced an invalid result");
         }
 
         return {
-          ...reading,
+          ...event,
           value: result
         };
       })
     );
 };
 
-// Build threshold filter
-const buildThreshold = (node) => {
-  const { operator, value } = node.data;
+// Threshold node: gt, gte, lt, lte, eq comparison
+const createThreshold = (node) => {
+  const { operator, value } = node.data || {};
+
+  const supportedOperators = [
+    "gt",
+    "gte",
+    "lt",
+    "lte",
+    "eq"
+  ];
+
+  if (!supportedOperators.includes(operator)) {
+    throw new Error(
+      `Unsupported threshold operator: ${operator}`
+    );
+  }
+
+  if (typeof value !== "number" ||
+      !Number.isFinite(value)) {
+    throw new Error(
+      `Threshold node ${node.id} requires a valid numeric value`
+    );
+  }
 
   return (source$) =>
     source$.pipe(
-      filter((reading) => {
+      filter((event) => {
         switch (operator) {
           case "gt":
-            return reading.value > value;
+            return event.value > value;
 
           case "gte":
-            return reading.value >= value;
+            return event.value >= value;
 
           case "lt":
-            return reading.value < value;
+            return event.value < value;
 
           case "lte":
-            return reading.value <= value;
+            return event.value <= value;
 
           case "eq":
-            return reading.value === value;
+            return event.value === value;
 
           default:
             return false;
@@ -144,8 +187,8 @@ const buildThreshold = (node) => {
     );
 };
 
-// Build SMS alert side-effect operator
-const buildSmsAlert = (node, context = {}) => {
+// SMS alert side-effect operator
+const createSmsAlert = (node, context = {}) => {
   return (source$) =>
     source$.pipe(
       tap((reading) => {
@@ -166,30 +209,23 @@ const buildSmsAlert = (node, context = {}) => {
     );
 };
 
+const nodeRegistry = {
+  sensor: createSensorStream,
+  movingAverage: createMovingAverage,
+  mathOperation: createMathOperation,
+  threshold: createThreshold,
+  smsAlert: createSmsAlert
+};
+
 // Convert a visual node into an RxJS source or operator
 const buildNode = (node, context = {}) => {
-  switch (node.type) {
-    case NODE_TYPES.SENSOR:
-      return createSensorStream(node, context);
-
-    case NODE_TYPES.MOVING_AVERAGE:
-      return buildMovingAverage(node);
-
-    case NODE_TYPES.MATH_OPERATION:
-      return buildMathOperation(node);
-
-    case NODE_TYPES.THRESHOLD:
-      return buildThreshold(node);
-
-    case NODE_TYPES.SMS_ALERT:
-      return buildSmsAlert(node, context);
-
-    default:
-      throw new Error(`Unsupported node type: ${node.type}`);
+  const handler = nodeRegistry[node.type];
+  if (!handler) {
+    throw new Error(`Unsupported node type: ${node.type}`);
   }
+  return handler(node, context);
 };
 
-module.exports = {
-  buildNode,
-  createSensorStream
-};
+nodeRegistry.buildNode = buildNode;
+
+module.exports = nodeRegistry;

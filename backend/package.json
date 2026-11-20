@@ -11,7 +11,8 @@
     "test:parser": "node scripts/test-graph-parser.js",
     "test:validator": "node scripts/test-graph-validator.js",
     "test:sorter": "node scripts/test-graph-sorter.js",
-    "test:data-source": "node scripts/test-data-source.js"
+    "test:data-source": "node scripts/test-data-source.js",
+    "test:math": "node scripts/test-math-threshold.js"
   },
   "keywords": [],
   "author": "",
