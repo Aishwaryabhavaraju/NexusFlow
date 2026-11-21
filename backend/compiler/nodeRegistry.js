@@ -41,35 +41,48 @@ const createSensorStream = (node, context) => {
   );
 };
 
-// Build a moving average operator
+// Moving average node: calculates rolling average of recent readings
 const createMovingAverage = (node) => {
-  const windowSize = node.data.windowSize;
+  const { windowSize } = node.data || {};
 
+  // Validate the moving average window size.
+  if (
+    !Number.isInteger(windowSize) ||
+    windowSize < 1 ||
+    windowSize > 10000
+  ) {
+    throw new Error(
+      `Moving Average node ${node.id} requires a windowSize between 1 and 10000`
+    );
+  }
+
+  // Return an RxJS operator for the pipeline builder.
   return (source$) =>
     source$.pipe(
-      scan((state, reading) => {
-        const values = [
-          ...state.values,
-          reading.value
-        ].slice(-windowSize);
+      // Keep only the latest windowSize events.
+      scan((window, event) => {
+        return [...window, event].slice(-windowSize);
+      }, []),
 
-        const average =
-          values.reduce((sum, value) => sum + value, 0) /
-          values.length;
+      // Calculate the average of the current window.
+      map((window) => {
+        const total = window.reduce(
+          (sum, event) => sum + event.value,
+          0
+        );
+
+        const average = total / window.length;
+
+        // Preserve the latest event's metadata.
+        const latestEvent = window[window.length - 1];
 
         return {
-          values,
-          reading: {
-            ...reading,
-            value: average
-          }
+          ...latestEvent,
+          rawValue: latestEvent.value,
+          value: average,
+          windowSize: window.length
         };
-      }, {
-        values: [],
-        reading: null
-      }),
-
-      map((state) => state.reading)
+      })
     );
 };
 
