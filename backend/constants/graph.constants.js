@@ -3,7 +3,8 @@ const NODE_TYPES = {
   MOVING_AVERAGE: "movingAverage",
   MATH_OPERATION: "mathOperation",
   THRESHOLD: "threshold",
-  SMS_ALERT: "smsAlert"
+  SMS_ALERT: "smsAlert",
+  ACTION_TRIGGER: "actionTrigger"
 };
 
 const DEFAULT_GRAPH_CONFIG = {

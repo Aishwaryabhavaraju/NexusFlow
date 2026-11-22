@@ -257,6 +257,24 @@ const validateGraph = (parsedGraph) => {
         }
         break;
 
+      case NODE_TYPES.ACTION_TRIGGER: {
+        const { actionType = "alert", message } = node.data;
+
+        if (actionType !== "alert") {
+          errors.push(
+            `Action Trigger node ${node.id} has an unsupported action type`
+          );
+        }
+
+        if (typeof message !== "string" || !message.trim()) {
+          errors.push(
+            `Action Trigger node ${node.id} requires a non-empty message`
+          );
+        }
+
+        break;
+      }
+
       default:
         // Unsupported types are already reported above.
         break;

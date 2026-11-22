@@ -222,12 +222,60 @@ const createSmsAlert = (node, context = {}) => {
     );
 };
 
+// Action Trigger node: evaluates rule condition and triggers alert events
+const createActionTrigger = (node, context = {}) => {
+  const {
+    actionType = "alert",
+    message
+  } = node.data || {};
+
+  const supportedActions = ["alert"];
+
+  if (!supportedActions.includes(actionType)) {
+    throw new Error(
+      `Unsupported action type: ${actionType}`
+    );
+  }
+
+  if (typeof message !== "string" || !message.trim()) {
+    throw new Error(
+      `Action Trigger node ${node.id} requires a message`
+    );
+  }
+
+  return (source$) =>
+    source$.pipe(
+      tap((event) => {
+        // The Threshold node forwards only matching events.
+        const alertEvent = {
+          type: "ALERT_TRIGGERED",
+          actionType,
+          nodeId: node.id,
+          deviceId: event.deviceId,
+          metric: event.metric,
+          value: event.value,
+          timestamp: event.timestamp,
+          message
+        };
+
+        console.log("\nACTION TRIGGERED!");
+        console.log(alertEvent);
+
+        // Send the alert to the configured alert handler.
+        if (typeof context.sendAlert === "function") {
+          context.sendAlert(alertEvent);
+        }
+      })
+    );
+};
+
 const nodeRegistry = {
   sensor: createSensorStream,
   movingAverage: createMovingAverage,
   mathOperation: createMathOperation,
   threshold: createThreshold,
-  smsAlert: createSmsAlert
+  smsAlert: createSmsAlert,
+  actionTrigger: createActionTrigger
 };
 
 // Convert a visual node into an RxJS source or operator
