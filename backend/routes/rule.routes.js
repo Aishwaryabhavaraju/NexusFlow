@@ -1,9 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const ruleController = require("../controllers/rule.controller");
 
-router.post("/:graphId/execute", ruleController.executeRule);
-router.get("/:ruleId/status", ruleController.getRuleStatus);
+const {
+  startRule,
+  stopRule,
+  getRuleStatus
+} = require("../controllers/rule.controller");
+
+router.post("/:graphId/start", startRule);
+router.post("/:graphId/stop", stopRule);
+router.get("/:graphId/status", getRuleStatus);
 
 module.exports = router;
-
