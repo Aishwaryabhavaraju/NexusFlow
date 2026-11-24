@@ -41,48 +41,52 @@ const createSensorStream = (node, context) => {
   );
 };
 
-// Moving average node: calculates rolling average of recent readings
+// Moving average node: rolling average with rolling sum
 const createMovingAverage = (node) => {
   const { windowSize } = node.data || {};
 
-  // Validate the moving average window size.
   if (
     !Number.isInteger(windowSize) ||
     windowSize < 1 ||
     windowSize > 10000
   ) {
     throw new Error(
-      `Moving Average node ${node.id} requires a windowSize between 1 and 10000`
+      `Moving Average node ${node.id} requires a valid windowSize`
     );
   }
 
-  // Return an RxJS operator for the pipeline builder.
   return (source$) =>
     source$.pipe(
-      // Keep only the latest windowSize events.
-      scan((window, event) => {
-        return [...window, event].slice(-windowSize);
-      }, []),
+      scan(
+        (state, event) => {
+          const values = [...state.values, event.value];
 
-      // Calculate the average of the current window.
-      map((window) => {
-        const total = window.reduce(
-          (sum, event) => sum + event.value,
-          0
-        );
+          let sum = state.sum + event.value;
 
-        const average = total / window.length;
+          if (values.length > windowSize) {
+            const removedValue = values.shift();
+            sum -= removedValue;
+          }
 
-        // Preserve the latest event's metadata.
-        const latestEvent = window[window.length - 1];
+          return {
+            values,
+            sum,
+            latestEvent: event
+          };
+        },
+        {
+          values: [],
+          sum: 0,
+          latestEvent: null
+        }
+      ),
 
-        return {
-          ...latestEvent,
-          rawValue: latestEvent.value,
-          value: average,
-          windowSize: window.length
-        };
-      })
+      map((state) => ({
+        ...state.latestEvent,
+        rawValue: state.latestEvent.value,
+        value: state.sum / state.values.length,
+        windowSize: state.values.length
+      }))
     );
 };
 

@@ -24,17 +24,10 @@ const startWorkflow = async (graphId) => {
   const subscription = StreamCompiler.execute(graphData, {
     sendAlert: (alert) => {
       console.log("Workflow Alert:", alert);
-
-      // Later, this callback can be connected to
-      // Member 4's dashboard and notification module.
     },
 
     onError: (error) => {
-      console.error(
-        `Workflow ${graphId} failed:`,
-        error.message
-      );
-
+      console.error("Workflow execution failed:", error.message);
       activeWorkflows.delete(graphId);
     },
 
@@ -42,6 +35,10 @@ const startWorkflow = async (graphId) => {
       activeWorkflows.delete(graphId);
     }
   });
+
+  if (subscription.closed) {
+    throw new Error("Workflow subscription could not be started");
+  }
 
   activeWorkflows.set(graphId, subscription);
 
