@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, BellOff, Check, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, BellOff, Check, Trash2, ChevronDown, ChevronUp, Volume2, VolumeX } from 'lucide-react';
 import { useAlerts } from '../../context/AlertContext';
 
 const SEVERITY_STYLES = {
@@ -48,7 +48,7 @@ function AlertRow({ alert, onAck }) {
 }
 
 export default function AlertPanel() {
-  const { alerts, unreadCount, acknowledge, clearAll } = useAlerts();
+  const { alerts, unreadCount, todayCounts, soundEnabled, toggleSound, acknowledge, clearAll } = useAlerts();
   const [filter, setFilter] = useState('all');
 
   const filtered = alerts.filter(a => {
@@ -65,9 +65,26 @@ export default function AlertPanel() {
           <span className="text-sm font-semibold text-slate-200 uppercase tracking-wider">Alerts</span>
           {unreadCount > 0 && <span className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
         </div>
-        <button onClick={clearAll} className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-red-400 transition-colors">
-          <Trash2 size={11} /> Clear all
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleSound}
+            title={soundEnabled ? 'Mute critical alert sound' : 'Unmute critical alert sound'}
+            className={`p-1 rounded transition-colors ${soundEnabled ? 'text-cyan-400 hover:bg-slate-700' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700'}`}
+          >
+            {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+          </button>
+          <button onClick={clearAll} className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-red-400 transition-colors">
+            <Trash2 size={11} /> Clear all
+          </button>
+        </div>
+      </div>
+      <div className="text-[11px] text-slate-400 bg-slate-900/50 border border-slate-700/70 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5">
+        <span className="text-red-400 font-semibold">{todayCounts.critical} critical</span>
+        <span>,</span>
+        <span className="text-yellow-400 font-semibold">
+          {todayCounts.warn} {todayCounts.warn === 1 ? 'warning' : 'warnings'}
+        </span>
+        <span>today</span>
       </div>
       <div className="flex gap-1">
         {['all', 'unread', 'critical'].map(f => (

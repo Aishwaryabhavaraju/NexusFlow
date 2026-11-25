@@ -1,11 +1,11 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useAlerts } from '../../context/AlertContext';
 
-const UNIT_MAP      = { temperature: '°C', pressure: 'bar', vibration: 'mm/s' };
-const THRESHOLD_MAP = { temperature: { warn: 80, critical: 100 }, pressure: { warn: 7.5, critical: 9 }, vibration: { warn: 3.5, critical: 4.5 } };
+const UNIT_MAP = { temperature: '°C', pressure: 'bar', vibration: 'mm/s' };
 
-function getSeverity(sensor, value) {
-  const t = THRESHOLD_MAP[sensor];
+function getSeverity(sensor, value, thresholds) {
+  const t = thresholds?.[sensor];
   if (!t) return 'normal';
   if (value >= t.critical) return 'critical';
   if (value >= t.warn)     return 'warn';
@@ -20,11 +20,13 @@ const SEVERITY_STYLES = {
 const VALUE_STYLES = { normal: 'text-white', warn: 'text-yellow-300', critical: 'text-red-400' };
 
 export default function MetricCard({ sensor, value, prevValue }) {
+  const { thresholds } = useAlerts();
   const unit     = UNIT_MAP[sensor] ?? '';
-  const severity = getSeverity(sensor, value);
+  const severity = getSeverity(sensor, value, thresholds);
   const delta    = value - (prevValue ?? value);
   const TrendIcon = delta > 0.05 ? TrendingUp : delta < -0.05 ? TrendingDown : Minus;
   const trendColor = delta > 0.05 ? 'text-red-400' : delta < -0.05 ? 'text-green-400' : 'text-gray-500';
+  const criticalMax = thresholds?.[sensor]?.critical;
 
   return (
     <div className={`rounded-xl border p-4 flex flex-col gap-2 transition-all duration-500 ${SEVERITY_STYLES[severity]}`}>
@@ -49,11 +51,11 @@ export default function MetricCard({ sensor, value, prevValue }) {
         <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-700 ${severity === 'critical' ? 'bg-red-500' : severity === 'warn' ? 'bg-yellow-500' : 'bg-cyan-500'}`}
-            style={{ width: `${Math.min(100, (value / (THRESHOLD_MAP[sensor]?.critical ?? value * 1.2)) * 100)}%` }}
+            style={{ width: `${Math.min(100, (value / (criticalMax ?? value * 1.2)) * 100)}%` }}
           />
         </div>
         <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
-          <span>0</span><span>{THRESHOLD_MAP[sensor]?.critical ?? '—'}{unit} max</span>
+          <span>0</span><span>{criticalMax ?? '—'}{unit} max</span>
         </div>
       </div>
     </div>

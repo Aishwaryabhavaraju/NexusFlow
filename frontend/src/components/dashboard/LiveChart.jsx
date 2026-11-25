@@ -4,11 +4,12 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine, Brush
 } from 'recharts';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { useAlerts } from '../../context/AlertContext';
 
 const SENSOR_CONFIG = {
-  temperature: { color: '#f97316', unit: '°C',   warn: 80,  critical: 100 },
-  pressure:    { color: '#38bdf8', unit: ' bar',  warn: 7.5, critical: 9   },
-  vibration:   { color: '#a78bfa', unit: ' mm/s', warn: 3.5, critical: 4.5 },
+  temperature: { color: '#f97316', unit: '°C' },
+  pressure:    { color: '#38bdf8', unit: ' bar' },
+  vibration:   { color: '#a78bfa', unit: ' mm/s' },
 };
 const ALL_SENSORS = Object.keys(SENSOR_CONFIG);
 
@@ -28,13 +29,15 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function LiveChart({ series, sensors = ALL_SENSORS }) {
+  const { thresholds } = useAlerts();
   const [activeSensors, setActiveSensors] = useState(new Set(sensors));
   const [brushRange, setBrushRange] = useState(null); // { startIndex, endIndex }
   const [zoomLevel, setZoomLevel]   = useState(60);   // how many points to show in brush window
 
   const toggle = (sensor) => setActiveSensors((prev) => {
     const next = new Set(prev);
-    next.has(sensor) ? next.delete(sensor) : next.add(sensor);
+    if (next.has(sensor)) next.delete(sensor);
+    else next.add(sensor);
     return next;
   });
 
@@ -102,9 +105,9 @@ export default function LiveChart({ series, sensors = ALL_SENSORS }) {
           <Tooltip content={<CustomTooltip />} />
 
           {/* threshold reference lines */}
-          {ALL_SENSORS.filter(s => activeSensors.has(s)).flatMap(s => [
-            <ReferenceLine key={`${s}-w`} y={SENSOR_CONFIG[s].warn}     stroke={SENSOR_CONFIG[s].color} strokeDasharray="4 4" strokeOpacity={0.4} />,
-            <ReferenceLine key={`${s}-c`} y={SENSOR_CONFIG[s].critical} stroke="#ef4444"                strokeDasharray="4 2" strokeOpacity={0.6} />,
+          {ALL_SENSORS.filter(s => activeSensors.has(s) && thresholds?.[s]).flatMap(s => [
+            <ReferenceLine key={`${s}-w`} y={thresholds[s].warn}     stroke={SENSOR_CONFIG[s].color} strokeDasharray="4 4" strokeOpacity={0.4} />,
+            <ReferenceLine key={`${s}-c`} y={thresholds[s].critical} stroke="#ef4444"                strokeDasharray="4 2" strokeOpacity={0.6} />,
           ])}
 
           {ALL_SENSORS.filter(s => activeSensors.has(s)).map(s => (

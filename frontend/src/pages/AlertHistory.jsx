@@ -9,7 +9,7 @@ const SEVERITY_STYLES = {
 };
 
 export default function AlertHistory({ onBack }) {
-  const { alerts } = useAlerts();
+  const { alerts, todayCounts } = useAlerts();
   const [search, setSearch]     = useState('');
   const [severity, setSeverity] = useState('all');
 
@@ -21,10 +21,20 @@ export default function AlertHistory({ onBack }) {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 md:p-6 flex flex-col gap-5">
-      <header className="flex items-center gap-4">
-        <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors"><ArrowLeft size={20} /></button>
-        <h1 className="text-xl font-bold">Alert History</h1>
-        <span className="text-xs text-slate-500">({filtered.length} of {alerts.length} alerts)</span>
+      <header className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors"><ArrowLeft size={20} /></button>
+          <h1 className="text-xl font-bold">Alert History</h1>
+          <span className="text-xs text-slate-500">({filtered.length} of {alerts.length} alerts)</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs bg-slate-800/80 border border-slate-700 rounded-full px-3 py-1">
+          <span className="text-red-400 font-semibold">{todayCounts.critical} critical</span>
+          <span className="text-slate-500">,</span>
+          <span className="text-yellow-400 font-semibold">
+            {todayCounts.warn} {todayCounts.warn === 1 ? 'warning' : 'warnings'}
+          </span>
+          <span className="text-slate-400">today</span>
+        </div>
       </header>
 
       <div className="flex flex-col sm:flex-row gap-3">
