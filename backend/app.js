@@ -5,9 +5,11 @@ const morgan = require("morgan");
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 
+const authRoutes = require("./routes/auth.routes");
 const graphRoutes = require("./routes/graph.routes");
 const telemetryRoutes = require("./routes/telemetry.routes");
 const ruleRoutes = require("./routes/rule.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
 const errorHandler = require("./middleware/error.middleware");
 
 const app = express();
@@ -24,16 +26,19 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
     message: "NexusFlow backend is running",
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
+    timestamp: new Date()
   });
 });
 
 // API routes
+app.use("/api/auth", authRoutes);
 app.use("/api/graphs", graphRoutes);
 app.use("/api/telemetry", telemetryRoutes);
 app.use("/api/rules", ruleRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
-// Invalid route
+// Invalid route handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
