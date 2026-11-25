@@ -1,13 +1,11 @@
 const { Subject } = require("rxjs");
+const StreamCompiler = require("../services/streamCompiler.service");
 
-const streamCompiler = require("../services/streamCompiler.service");
-
-// Create a test telemetry source
 const testTelemetry$ = new Subject();
 
-// Sample React Flow graph
-const graph = {
-  name: "Turbine Temperature Alert",
+const sampleGraph = {
+  name: "Turbine Temperature Monitoring",
+  description: "Test the Stream Compiler integration",
 
   config: {
     version: "1.0",
@@ -27,12 +25,13 @@ const graph = {
       }
     },
     {
-      id: "filter-1",
-      type: "movingAverage",
+      id: "math-1",
+      type: "mathOperation",
       position: { x: 300, y: 150 },
       data: {
-        label: "Moving Average",
-        windowSize: 2
+        label: "Add Calibration",
+        operation: "add",
+        operand: 0
       }
     },
     {
@@ -42,16 +41,17 @@ const graph = {
       data: {
         label: "Temperature Threshold",
         operator: "gte",
-        value: 85
+        value: 80
       }
     },
     {
-      id: "alert-1",
-      type: "smsAlert",
+      id: "action-1",
+      type: "actionTrigger",
       position: { x: 700, y: 150 },
       data: {
-        label: "SMS Alert",
-        message: "Turbine temperature exceeded 85 degrees!"
+        label: "Alert",
+        actionType: "alert",
+        message: "Turbine temperature exceeded 80 degrees!"
       }
     }
   ],
@@ -60,57 +60,67 @@ const graph = {
     {
       id: "edge-1",
       source: "sensor-1",
-      target: "filter-1"
+      target: "math-1"
     },
     {
       id: "edge-2",
-      source: "filter-1",
+      source: "math-1",
       target: "threshold-1"
     },
     {
       id: "edge-3",
       source: "threshold-1",
-      target: "alert-1"
+      target: "action-1"
     }
   ]
 };
 
-// Compile and execute the graph
-const subscription = streamCompiler.execute(graph, {
-  telemetryStream$: testTelemetry$,
+console.log("\nStarting Stream Compiler Integration Test...\n");
 
-  sendAlert: (alert) => {
-    console.log("\nMOCK SMS ALERT:", alert.message);
-    console.log("Device:", alert.deviceId);
-    console.log("Value:", alert.value);
-  },
+try {
+  const subscription = StreamCompiler.execute(sampleGraph, {
+    telemetryStream$: testTelemetry$,
 
-  onData: (data) => {
-    console.log("Final pipeline data:", data);
-  }
-});
+    sendAlert: alert => {
+      console.log("\nALERT RECEIVED:", alert.message);
+    },
 
-// Simulate incoming sensor readings
-const readings = [70, 90, 100, 80];
+    onData: data => {
+      console.log("Final processed reading:", data.value);
+    },
 
-readings.forEach((temperature, index) => {
-  setTimeout(() => {
-    console.log("\nNew temperature:", temperature);
+    onError: error => {
+      console.error("Test execution failed:", error.message);
+    }
+  });
+
+  console.log("\nWorkflow compiled and subscribed successfully.");
+
+  // Simulate incoming sensor readings
+  const readings = [65, 75, 85, 90, 70];
+
+  readings.forEach(value => {
+    console.log(`\nPublishing temperature: ${value}`);
 
     testTelemetry$.next({
       deviceId: "TURBINE-001",
       metric: "temperature",
-      value: temperature,
+      value,
       timestamp: new Date()
     });
+  });
 
-    // Complete the test after the last reading
-    if (index === readings.length - 1) {
-      setTimeout(() => {
-        subscription.unsubscribe();
-        testTelemetry$.complete();
-        console.log("\nTest completed");
-      }, 100);
-    }
-  }, index * 1000);
-});
+  subscription.unsubscribe();
+  testTelemetry$.complete();
+
+  console.log("\nStream Compiler Integration Test Finished.");
+
+} catch (error) {
+  console.error("\nCompiler Integration Error:", error.message);
+
+  if (error.validationErrors) {
+    console.error("Validation errors:", error.validationErrors);
+  }
+
+  process.exitCode = 1;
+}

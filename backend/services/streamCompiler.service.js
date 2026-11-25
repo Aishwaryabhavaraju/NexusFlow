@@ -3,13 +3,17 @@ const validateGraph = require("../compiler/graphValidator");
 const sortGraphNodes = require("../compiler/graphSorter");
 const buildPipeline = require("../compiler/pipelineBuilder");
 
-const { telemetryStream$ } =
-  require("./telemetryStream.service");
+const {
+  telemetryStream$
+} = require("./telemetryStream.service");
 
 class StreamCompiler {
+  // Step 1: Parse, validate, sort and compile the graph
   compile(graph, options = {}) {
+    // Parse the incoming React Flow JSON
     const parsedGraph = parseGraph(graph);
 
+    // Validate the parsed graph
     const validation = validateGraph(parsedGraph);
 
     if (!validation.isValid) {
@@ -18,39 +22,58 @@ class StreamCompiler {
       throw error;
     }
 
-    // Determine the execution order.
+    // Determine the correct node execution order
     const sortedNodes = sortGraphNodes(parsedGraph);
 
     console.log(
-      "Execution Order:",
+      "Workflow execution order:",
       sortedNodes.map(node => node.id)
     );
 
-    // Build the RxJS pipeline.
-    return buildPipeline(parsedGraph, sortedNodes, {
-      telemetryStream$:
-        options.telemetryStream$ || telemetryStream$,
-      sendAlert: options.sendAlert
-    });
+    // Build the RxJS pipeline
+    const pipeline$ = buildPipeline(
+      parsedGraph,
+      sortedNodes,
+      {
+        telemetryStream$: options.telemetryStream$ || telemetryStream$,
+        sendAlert: options.sendAlert
+      }
+    );
+
+    return pipeline$;
   }
 
+  // Step 2: Execute the compiled pipeline
   execute(graph, options = {}) {
-    const observable = this.compile(graph, options);
+    const pipeline$ = this.compile(graph, options);
 
-    return observable.subscribe({
+    const subscription = pipeline$.subscribe({
       next: data => {
         console.log("Pipeline Output:", data);
-        options.onData?.(data);
+
+        if (typeof options.onData === "function") {
+          options.onData(data);
+        }
       },
+
       error: error => {
         console.error("Pipeline Error:", error.message);
-        options.onError?.(error);
+
+        if (typeof options.onError === "function") {
+          options.onError(error);
+        }
       },
+
       complete: () => {
         console.log("Pipeline Completed");
-        options.onComplete?.();
+
+        if (typeof options.onComplete === "function") {
+          options.onComplete();
+        }
       }
     });
+
+    return subscription;
   }
 }
 
