@@ -15,6 +15,7 @@
     "test:math": "node scripts/test-math-threshold.js",
     "test:moving-average": "node scripts/test-moving-average.js",
     "test:action": "node scripts/test-action-trigger.js",
+    "test:pipeline": "node scripts/test-pipeline-builder.js",
     "test:e2e": "node scripts/test-e2e.js",
     "test:e2e:workflow": "node scripts/test-e2e-workflow.js"
   },

@@ -1,48 +1,59 @@
-const { NODE_TYPES } = require("./compiler.constants");
-const { buildNode } = require("./nodeRegistry");
+const nodeRegistry = require("./nodeRegistry");
 
-const buildPipeline = (parsedGraph, sortedNodes, context) => {
-  const streams = new Map();
+const buildPipeline = (
+  parsedGraph,
+  sortedNodes,
+  context = {}
+) => {
+  if (!Array.isArray(sortedNodes) || sortedNodes.length === 0) {
+    throw new Error("No nodes available to build pipeline");
+  }
+
+  let pipeline$ = null;
 
   for (const node of sortedNodes) {
-    // Sensor nodes create the initial Observable
-    if (node.type === NODE_TYPES.SENSOR) {
-      const source$ = buildNode(node, context);
-      streams.set(node.id, source$);
+    const nodeHandler = nodeRegistry[node.type];
+
+    if (!nodeHandler) {
+      throw new Error(`No handler registered for node type: ${node.type}`);
+    }
+
+    // Sensor node creates the source Observable
+    if (node.type === "sensor") {
+      if (pipeline$ !== null) {
+        throw new Error("Multiple sensor nodes are not supported");
+      }
+
+      pipeline$ = nodeHandler(node, context);
+
       continue;
     }
 
-    // Find the node connected to this node
-    const incomingEdges = parsedGraph.incomingEdges.get(node.id);
-
-    if (incomingEdges.length !== 1) {
+    // All other nodes must have a source stream
+    if (!pipeline$) {
       throw new Error(
-        `Node ${node.id} must have exactly one input`
+        `Sensor source must appear before node: ${node.id}`
       );
     }
 
-    const parentId = incomingEdges[0].source;
-    const parentStream$ = streams.get(parentId);
+    // Create the RxJS operator
+    const operator = nodeHandler(node, context);
 
-    if (!parentStream$) {
+    if (typeof operator !== "function") {
       throw new Error(
-        `Input stream not found for node ${node.id}`
+        `Node ${node.id} did not return a valid RxJS operator`
       );
     }
 
-    // Convert the current node into an RxJS operator
-    const operator = buildNode(node, context);
-
-    // Apply the operator to the parent's Observable
-    const currentStream$ = parentStream$.pipe(operator);
-
-    streams.set(node.id, currentStream$);
+    // Connect the next node to the existing stream
+    pipeline$ = pipeline$.pipe(operator);
   }
 
-  // Return the stream produced by the final node
-  const finalNode = sortedNodes[sortedNodes.length - 1];
+  if (!pipeline$) {
+    throw new Error("Unable to create pipeline: Sensor source missing");
+  }
 
-  return streams.get(finalNode.id);
+  return pipeline$;
 };
 
 module.exports = buildPipeline;
