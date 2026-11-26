@@ -1,15 +1,62 @@
 @import "tailwindcss";
 
+/* ── Font ───────────────────────────────────────────────────── */
 :root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color-scheme: dark;
 }
 
-body {
-  margin: 0;
-  background-color: #0f172a;
+/* ── Dark theme (default) ───────────────────────────────────── */
+.dark {
+  --bg-base:     #0f172a;
+  --bg-card:     rgba(30,41,59,0.6);
+  --border:      #334155;
+  --text-primary:#e2e8f0;
+  --text-muted:  #94a3b8;
+  color-scheme: dark;
 }
 
+/* ── Light theme ────────────────────────────────────────────── */
+.light {
+  --bg-base:     #f1f5f9;
+  --bg-card:     #ffffff;
+  --border:      #e2e8f0;
+  --text-primary:#1e293b;
+  --text-muted:  #64748b;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* ── Light-mode utility overrides ───────────────────────────── */
+.light .light-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border) !important;
+}
+.light .light-text   { color: var(--text-primary) !important; }
+.light .light-muted  { color: var(--text-muted)   !important; }
+.light .light-bg     { background-color: var(--bg-base) !important; }
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
 .scrollbar-thin::-webkit-scrollbar { width: 4px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+/* ── Data flow particle animation ───────────────────────────── */
+@keyframes flowRight {
+  0%   { left: 2%;   opacity: 0;   transform: translateY(-50%) scale(0.6); }
+  10%  { opacity: 1; transform: translateY(-50%) scale(1); }
+  85%  { opacity: 1; }
+  100% { left: 90%;  opacity: 0;   transform: translateY(-50%) scale(0.6); }
+}
+
+/* ── Glow pulse ─────────────────────────────────────────────── */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1;   }
+}
