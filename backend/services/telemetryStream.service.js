@@ -1,28 +1,25 @@
 const { Subject } = require("rxjs");
 const { map, tap } = require("rxjs/operators");
 
-// Receives raw IoT telemetry events.
+// Shared Subject receives telemetry events
 const telemetrySubject = new Subject();
 
-// Read-only stream consumed by the Stream Compiler.
+// Expose the Subject as a read-only Observable
 const telemetryStream$ = telemetrySubject.asObservable();
 
-/**
- * Publishes telemetry in a standard event format:
- * {
- *   deviceId: "TURBINE-001",
- *   metric: "temperature",
- *   value: 85,
- *   timestamp: Date
- * }
- *
- * Also supports the older measurements format:
- * { deviceId, measurements: { temperature, pressure } }
- */
+// Publish one or more normalized telemetry events
 const publishTelemetry = (input) => {
-  if (!input || typeof input.deviceId !== "string" ||
-      !input.deviceId.trim()) {
-    throw new Error("A valid deviceId is required");
+  if (!input || typeof input !== "object") {
+    throw new Error("Invalid telemetry input");
+  }
+
+  const { deviceId } = input;
+
+  if (
+    typeof deviceId !== "string" ||
+    !deviceId.trim()
+  ) {
+    throw new Error("Valid deviceId is required");
   }
 
   const timestamp = input.timestamp
@@ -33,60 +30,75 @@ const publishTelemetry = (input) => {
     throw new Error("Invalid telemetry timestamp");
   }
 
-  // Standard single-metric event.
+  const events = [];
+
+  // Format 1: Single metric reading
   if (typeof input.metric === "string") {
-    if (typeof input.value !== "number" ||
-        !Number.isFinite(input.value)) {
+    if (
+      typeof input.value !== "number" ||
+      !Number.isFinite(input.value)
+    ) {
       throw new Error("Telemetry value must be a finite number");
     }
 
-    telemetrySubject.next({
-      deviceId: input.deviceId,
-      metric: input.metric,
+    events.push({
+      deviceId: deviceId.trim(),
+      metric: input.metric.trim(),
       value: input.value,
       timestamp
     });
-
-    return;
   }
 
-  // Backward compatibility with the earlier measurements format.
-  if (input.measurements &&
-      typeof input.measurements === "object" &&
-      !Array.isArray(input.measurements)) {
-
+  // Format 2: Multiple measurements
+  else if (
+    input.measurements &&
+    typeof input.measurements === "object" &&
+    !Array.isArray(input.measurements)
+  ) {
     for (const [metric, value] of Object.entries(input.measurements)) {
-      if (typeof value !== "number" || !Number.isFinite(value)) {
+      if (!metric.trim()) continue;
+
+      if (
+        typeof value !== "number" ||
+        !Number.isFinite(value)
+      ) {
         continue;
       }
 
-      telemetrySubject.next({
-        deviceId: input.deviceId,
+      events.push({
+        deviceId: deviceId.trim(),
         metric,
         value,
         timestamp
       });
     }
 
-    return;
+    if (events.length === 0) {
+      throw new Error("No valid telemetry measurements provided");
+    }
+  } else {
+    throw new Error("Provide metric/value or measurements");
   }
 
-  throw new Error("Provide metric/value or a measurements object");
+  // Broadcast every normalized event
+  events.forEach(event => {
+    telemetrySubject.next(event);
+  });
+
+  return events;
 };
 
-// General-purpose processed telemetry stream.
+// Process telemetry events
 const processedTelemetry$ = telemetryStream$.pipe(
-  map((event) => ({
-    deviceId: event.deviceId,
-    timestamp: event.timestamp,
-    metric: event.metric,
-    value: event.value,
+  map(event => ({
+    ...event,
     measurements: {
       [event.metric]: event.value
     }
   })),
-  tap((event) => {
-    console.log("Processed telemetry:", event);
+
+  tap(event => {
+    console.log("Telemetry published:", event);
   })
 );
 

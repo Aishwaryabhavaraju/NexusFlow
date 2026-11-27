@@ -14,25 +14,35 @@ const startWorkflow = async (graphId) => {
     throw new Error("Workflow not found");
   }
 
-  if (!graph.config?.isEnabled) {
+  if (graph.config?.isEnabled === false) {
     throw new Error("Workflow is disabled");
   }
 
-  // Convert the Mongoose document into a plain object.
   const graphData = graph.toObject();
 
-  const subscription = StreamCompiler.execute(graphData, {
-    sendAlert: (alert) => {
+  let subscription;
+
+  subscription = StreamCompiler.execute(graphData, {
+    sendAlert: alert => {
       console.log("Workflow Alert:", alert);
     },
 
-    onError: (error) => {
+    onData: data => {
+      console.log("Workflow processed telemetry:", data);
+    },
+
+    onError: error => {
       console.error("Workflow execution failed:", error.message);
-      activeWorkflows.delete(graphId);
+
+      if (activeWorkflows.get(graphId) === subscription) {
+        activeWorkflows.delete(graphId);
+      }
     },
 
     onComplete: () => {
-      activeWorkflows.delete(graphId);
+      if (activeWorkflows.get(graphId) === subscription) {
+        activeWorkflows.delete(graphId);
+      }
     }
   });
 
@@ -56,6 +66,7 @@ const stopWorkflow = (graphId) => {
   }
 
   subscription.unsubscribe();
+
   activeWorkflows.delete(graphId);
 
   return {
@@ -70,8 +81,13 @@ const getWorkflowStatus = (graphId) => {
     : "stopped";
 };
 
+const getActiveWorkflowCount = () => {
+  return activeWorkflows.size;
+};
+
 module.exports = {
   startWorkflow,
   stopWorkflow,
-  getWorkflowStatus
+  getWorkflowStatus,
+  getActiveWorkflowCount
 };
