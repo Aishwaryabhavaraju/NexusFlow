@@ -74,7 +74,7 @@ export default function Dashboard({ onViewHistory }) {
             NexusFlow Dashboard
           </h1>
           <p className={`text-xs ${mutedText}`}>
-            Real-Time IoT Telemetry & Dynamic Rule Engine — Member 4 (Sowmya)
+            Real-Time IoT Telemetry & Dynamic Rule Engine
           </p>
         </div>
 
@@ -149,7 +149,7 @@ export default function Dashboard({ onViewHistory }) {
       </section>
 
       <footer className={`text-center text-[10px] ${mutedText} pb-2 flex items-center justify-center gap-3`}>
-        <span>NexusFlow · Member 4 — Real-Time Dashboard & Alerting (Sowmya) · {new Date().getFullYear()}</span>
+        <span>NexusFlow · Real-Time Dashboard & Alerting · {new Date().getFullYear()}</span>
         {onViewHistory && (
           <button onClick={onViewHistory} className="underline hover:text-cyan-400 transition-colors">
             View Complete Alert History →
