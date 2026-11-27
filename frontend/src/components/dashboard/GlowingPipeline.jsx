@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
  * between three "sensor" nodes and a central "dashboard" hub.
  * Lines pulse when new data arrives (dataTimestamp changes).
  */
-export default function GlowingPipeline({ dataTimestamp, wsStatus }) {
+export default function GlowingPipeline({ dataTimestamp, wsStatus, activeDevice }) {
   const canvasRef = useRef(null);
   const animRef   = useRef(null);
   const pulseRef  = useRef(0); // 0–1 pulse intensity
@@ -28,7 +28,7 @@ export default function GlowingPipeline({ dataTimestamp, wsStatus }) {
       { x: 50,  y: 20, label: 'Pressure',  color: '#38bdf8' },
       { x: 50,  y: 100,label: 'Vibration', color: '#a78bfa' },
     ];
-    const hub = { x: 350, y: 60, label: 'Dashboard', color: '#22d3ee' };
+    const hub = { x: 350, y: 60, label: 'Engine Hub', color: '#22d3ee' };
 
     let particleOffset = 0;
 
@@ -130,28 +130,38 @@ export default function GlowingPipeline({ dataTimestamp, wsStatus }) {
   }, []);
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 dark:bg-slate-800/60 light-card rounded-xl p-4 flex flex-col gap-2">
+    <div className="bg-slate-800/60 border border-slate-700 dark:bg-slate-800/60 light-card rounded-xl p-4 flex flex-col justify-between gap-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-200 dark:text-slate-200 light-text uppercase tracking-wider">
-          Data Pipeline
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs font-semibold text-slate-200 dark:text-slate-200 light-text uppercase tracking-wider">
+            Telemetry Pipeline
+          </h2>
+          {activeDevice && (
+            <span className="text-[10px] text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/50">
+              {activeDevice.tag}
+            </span>
+          )}
+        </div>
         <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium
           ${wsStatus === 'connected'
-            ? 'border-green-700 text-green-400 bg-green-900/20'
+            ? 'border-emerald-700 text-emerald-400 bg-emerald-900/20'
             : 'border-cyan-700 text-cyan-400 bg-cyan-900/20'}`}>
-          {wsStatus === 'connected' ? '● Live' : '◉ Simulated'}
+          {wsStatus === 'connected' ? '● WebSocket Live' : '◉ Continuous Stream'}
         </span>
       </div>
       <canvas
         ref={canvasRef}
         width={400}
-        height={120}
+        height={115}
         className="w-full"
         style={{ imageRendering: 'crisp-edges' }}
       />
-      <p className="text-[10px] text-slate-500">
-        Animated particles show real-time data flowing from sensors → dashboard
-      </p>
+      <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-700/40">
+        <span>Glow pulses upon each sensor packet reception</span>
+        <span className="text-slate-400 font-mono">
+          {activeDevice?.location || 'Sector A'}
+        </span>
+      </div>
     </div>
   );
 }

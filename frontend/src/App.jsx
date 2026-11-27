@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AlertProvider, useAlerts } from './context/AlertContext';
 import { TelemetryProvider } from './context/TelemetryContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { DeviceProvider } from './context/DeviceContext';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/Dashboard';
 import AlertHistory from './pages/AlertHistory';
@@ -14,9 +15,13 @@ function AppShell() {
 
   const handleAlert = useCallback((data) => {
     addAlert({
-      sensor: data.sensor, value: data.value,
-      threshold: data.threshold, severity: data.severity ?? 'warn',
+      sensor: data.sensor,
+      value: data.value,
+      threshold: data.threshold,
+      severity: data.severity ?? 'warn',
       message: data.message,
+      deviceId: data.deviceId,
+      deviceName: data.deviceName,
     });
   }, [addAlert]);
 
@@ -31,14 +36,13 @@ function AppShell() {
 
       {/* Full-screen flex layout: sidebar + main */}
       <div className={`flex h-screen overflow-hidden ${bgBase} transition-colors duration-300`}>
-
         {/* Sidebar */}
         <Sidebar activePage={page} onNavigate={setPage} />
 
         {/* Main content — scrollable */}
         <main className="flex-1 overflow-y-auto scrollbar-thin">
           {page === 'dashboard'
-            ? <Dashboard />
+            ? <Dashboard onViewHistory={() => setPage('history')} />
             : <AlertHistory onBack={() => setPage('dashboard')} />
           }
         </main>
@@ -51,7 +55,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <AlertProvider>
-        <AppShell />
+        <DeviceProvider>
+          <AppShell />
+        </DeviceProvider>
       </AlertProvider>
     </ThemeProvider>
   );
