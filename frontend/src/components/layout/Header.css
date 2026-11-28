@@ -1,0 +1,237 @@
+.nf-header {
+  height: var(--header-height);
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  position: relative;
+  z-index: 50;
+  user-select: none;
+}
+
+.nf-header__left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nf-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nf-header__logo-wrap {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nf-header__logo-icon {
+  color: var(--accent-cyan);
+}
+
+.nf-header__brand-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nf-header__title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.nf-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nf-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.nf-nav-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-hover);
+}
+
+.nf-nav-link--active {
+  color: var(--accent-cyan);
+  background-color: rgba(56, 189, 248, 0.1);
+  font-weight: 600;
+}
+
+.nf-header__center {
+  flex: 1;
+  max-width: 440px;
+  margin: 0 16px;
+}
+
+.nf-pipeline-name-box {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}
+
+.nf-pipeline-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 6px;
+}
+
+.nf-pipeline-name-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 4px;
+}
+
+.nf-pipeline-name-input:focus {
+  border: none;
+}
+
+.nf-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nf-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nf-header__context-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.nf-status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--status-active);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.nf-context-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.nf-mobile-toggle {
+  display: none;
+  color: var(--text-secondary);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+}
+
+.nf-mobile-drawer {
+  display: none;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 900px) {
+  .nf-header__nav {
+    display: none;
+  }
+
+  .nf-mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nf-mobile-drawer {
+    display: block;
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 12px 16px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .nf-mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nf-mobile-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+  }
+
+  .nf-mobile-link:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-surface-hover);
+  }
+}
+
+@media (max-width: 650px) {
+  .nf-header__center {
+    display: none;
+  }
+
+  .nf-header__actions .nf-btn:not(.nf-btn--primary) {
+    display: none;
+  }
+}
+
+/* Spinner Animation for In-Flight API Submissions */
+/* Lucide renders SVG with class "lucide lucide-loader-2" */
+.nf-btn .lucide-loader-2,
+.nf-btn .nf-btn__icon.lucide-loader-2 {
+  animation: nf-spin 0.8s linear infinite;
+}
+
+@keyframes nf-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
