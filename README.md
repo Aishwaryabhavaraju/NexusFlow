@@ -260,7 +260,7 @@ The serialized JSON structure is formatted specifically for handoff to **Member 
     }
   ]
 }
-
+```
 ---
 
 ## 📈 GitHub Contribution & Submission Compliance
